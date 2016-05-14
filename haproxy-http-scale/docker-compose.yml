@@ -1,0 +1,30 @@
+version: '2'
+services:
+    app:
+        build: .
+        image: lb-app
+        ports:
+            - 5000
+        links:
+            - redis
+        depends_on:
+            - redis
+
+    redis:
+        image: redis
+        expose:
+            - 6379
+
+    haproxy:
+        image: dockercloud/haproxy:1.2.1
+        links:
+            - app
+        ports:
+            - 80:80
+            - 1936:1936
+        environment:
+            - MAXCONN=8000
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        depends_on:
+            - app
