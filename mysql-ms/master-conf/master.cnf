@@ -1,0 +1,8 @@
+[mysqld]
+server-id=1
+log-bin=master-bin
+log-bin-index=master-bin.index
+binlog-ignore-db=mysql
+binlog-ignore-db=test
+binlog-ignore-db=sys
+binlog-ignore-db=information_schema

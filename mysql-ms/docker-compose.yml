@@ -1,0 +1,32 @@
+version: '2'
+services:
+    master:
+        image: mysql
+        container_name: master
+        hostname: master
+        environment:
+            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_ALLOW_EMPTY_PASSWORD=no
+        volumes:
+            - ./data/master:/var/lib/mysql
+            - ./master-conf:/etc/mysql/conf.d
+        ports:
+            - 13306:3306
+        
+    slave:
+        image: mysql
+        container_name: slave
+        hostname: slave
+        environment:
+            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_ALLOW_EMPTY_PASSWORD=no
+        volumes:
+            - ./data/slave:/var/lib/mysql
+            - ./slave-conf:/etc/mysql/conf.d
+        links:
+            - master
+        ports:
+            - 13316:3306
+        depends_on:
+            - master
+        #command: mysql start slave

@@ -1,0 +1,13 @@
+[mysqld]
+server-id=11
+relay-log=mysql-relay-bin.log
+log-bin=mysql-bin.log
+binlog-ignore-db=mysql
+binlog-ignore-db=test
+binlog-ignore-db=sys
+binlog-ignore-db=information_schema
+
+#设置从库只读
+read-only=1
+#设置特权用户只读(MySQL 5.7.8以上才支持)
+#super-read-only=1
