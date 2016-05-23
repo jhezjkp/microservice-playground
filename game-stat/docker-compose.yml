@@ -1,0 +1,18 @@
+version: '2'
+services:
+    influxDB:
+        image: influxdb
+        volumes:
+            - ./influxdb:/var/lib/influxdb
+            - ./influxdb.conf:/etc/influxdb/influxdb.conf:ro
+        ports:
+            - "8083:8083"
+            - "8086:8086"
+    grafana:
+        image: grafana/grafana
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=123456
+        links:
+            - influxDB
+        ports:
+            - 3000:3000

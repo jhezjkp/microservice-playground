@@ -1,0 +1,622 @@
+{
+  "id": 1,
+  "title": "XGame-Detail",
+  "originalTitle": "XGame-Detail",
+  "tags": [
+    "game"
+  ],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "hideControls": false,
+  "sharedCrosshair": false,
+  "rows": [
+    {
+      "collapse": false,
+      "editable": true,
+      "height": "250px",
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 1,
+          "isNew": true,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "游戏服$tag_serverId-$tag_channel",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "serverId"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "channel"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "hide": false,
+              "measurement": "online",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "num"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "sum"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "channel",
+                  "operator": "=~",
+                  "value": "/^$channel$/"
+                },
+                {
+                  "condition": "AND",
+                  "key": "serverId",
+                  "operator": "=~",
+                  "value": "/^$serverId$/"
+                }
+              ]
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "分服分渠道在线",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "transparent": false,
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        }
+      ],
+      "showTitle": false,
+      "title": "Row"
+    },
+    {
+      "collapse": false,
+      "editable": true,
+      "height": "250px",
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": true,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 2,
+          "isNew": true,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": false,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": true,
+          "renderer": "png",
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_serverId服$tag_channel渠道",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "serverId"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "channel"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "recharge",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "money"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "sum"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "serverId",
+                  "operator": "=~",
+                  "value": "/^$serverId$/"
+                },
+                {
+                  "condition": "AND",
+                  "key": "channel",
+                  "operator": "=~",
+                  "value": "/^$channel$/"
+                }
+              ]
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "充值",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        }
+      ],
+      "title": "New row"
+    },
+    {
+      "collapse": false,
+      "editable": true,
+      "height": "250px",
+      "panels": [
+        {
+          "aliasColors": {},
+          "cacheTimeout": null,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fontSize": "80%",
+          "format": "short",
+          "hideTimeOverride": false,
+          "id": 3,
+          "interval": null,
+          "isNew": true,
+          "legend": {
+            "show": true,
+            "values": true
+          },
+          "legendType": "Under graph",
+          "links": [],
+          "maxDataPoints": 3,
+          "nullPointMode": "connected",
+          "pieType": "pie",
+          "span": 4,
+          "strokeWidth": 1,
+          "targets": [
+            {
+              "alias": "$tag_serverId服$tag_channel钻石购买额",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "serverId"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "channel"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "shopBuy",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "diamond"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "sum"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "serverId",
+                  "operator": "=~",
+                  "value": "/^$serverId$/"
+                },
+                {
+                  "condition": "AND",
+                  "key": "channel",
+                  "operator": "=~",
+                  "value": "/^$channel$/"
+                }
+              ]
+            }
+          ],
+          "title": "商城钻石购买",
+          "type": "grafana-piechart-panel",
+          "valueName": "current"
+        },
+        {
+          "aliasColors": {},
+          "cacheTimeout": null,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fontSize": "80%",
+          "format": "short",
+          "id": 4,
+          "interval": null,
+          "isNew": true,
+          "legend": {
+            "show": true,
+            "values": true
+          },
+          "legendType": "Under graph",
+          "links": [],
+          "maxDataPoints": 3,
+          "nullPointMode": "connected",
+          "pieType": "pie",
+          "span": 4,
+          "strokeWidth": 1,
+          "targets": [
+            {
+              "alias": "$tag_goodsName(份)",
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "goodsName"
+                  ],
+                  "type": "tag"
+                }
+              ],
+              "hide": false,
+              "measurement": "shopBuy",
+              "policy": "default",
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "quantity"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "sum"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "serverId",
+                  "operator": "=~",
+                  "value": "/^$serverId$/"
+                },
+                {
+                  "condition": "AND",
+                  "key": "channel",
+                  "operator": "=~",
+                  "value": "/^$channel$/"
+                }
+              ]
+            }
+          ],
+          "title": "商城商品销售量",
+          "type": "grafana-piechart-panel",
+          "valueName": "current"
+        }
+      ],
+      "title": "New row"
+    },
+    {
+      "collapse": false,
+      "editable": true,
+      "height": "250px",
+      "panels": [],
+      "title": "New row"
+    }
+  ],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "tags": [],
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "游戏服",
+        "multi": true,
+        "name": "serverId",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          {
+            "selected": false,
+            "text": "2",
+            "value": "2"
+          }
+        ],
+        "query": "SHOW TAG VALUES WITH KEY = serverId",
+        "refresh": 0,
+        "tagValuesQuery": "SHOW TAG VALUES WITH KEY = \"channel\"  WHERE server_id = /$server_id/",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "current": {
+          "tags": [],
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "渠道",
+        "multi": true,
+        "name": "channel",
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "baidu",
+            "value": "baidu",
+            "selected": false
+          },
+          {
+            "text": "uc",
+            "value": "uc",
+            "selected": false
+          },
+          {
+            "text": "xiaomi",
+            "value": "xiaomi",
+            "selected": false
+          }
+        ],
+        "query": "SHOW TAG VALUES WITH KEY = channel WHERE \"serverId\" =~ /^$serverId$/",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "datasource": "influxdb",
+        "enable": true,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "显示开关服",
+        "query": "select * from server where $timeFilter",
+        "tagsColumn": "",
+        "textColumn": "action",
+        "titleColumn": "serverId"
+      }
+    ]
+  },
+  "refresh": "5s",
+  "schemaVersion": 12,
+  "version": 45,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "tags": [
+        "game"
+      ],
+      "title": "游戏数据统计",
+      "type": "dashboards"
+    }
+  ]
+}
