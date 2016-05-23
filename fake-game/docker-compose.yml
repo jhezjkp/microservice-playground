@@ -1,0 +1,8 @@
+version: '2'
+services:
+    fake-game:
+        image: java:8-jre-alpine
+        volumes:
+            - ./game:/game
+        working_dir: /game
+        command: java -jar game.jar
