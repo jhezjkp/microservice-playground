@@ -1,0 +1,32 @@
+version: '2'
+services:
+    demo:
+        build: .
+        image: demo
+        container_name: demo
+
+    cassandra:
+        image: cassandra:2.2
+        container_name: cassandra
+        hostname: cassandra
+        ports:
+            - 9042:9042
+
+    kong:
+        image: mashape/kong
+        container_name: kong
+        hostname: kong
+        environment:
+            - DATABASE=cassandra
+        links:
+            - cassandra:kong-database
+        ports:
+            - 8000:8000
+            - 8443:8443
+            - 8001:8001
+            - 7946:7946
+            - 7946:7946/udp
+        security_opt:
+            - seccomp=unconfined
+        depends_on:
+            - cassandra
