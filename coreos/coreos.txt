@@ -3,6 +3,12 @@
 ssh_authorized_keys:
     - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC54zsc1JqA3eozpRFO6rvukZZD2J+Dg4LDoErLcHYuE9kPUiiS27paQ63PKB/aIPj2dnBg6tF+/Itf5+W/63b4vGg0DYTGtOH/iltrObG9ZiZw8UTh6VF4Daf+ng/vbQib8vnbYE6nJoRjF28goSyXpGa5mzKnTM2iivitsR8nMw==
 coreos:
+  etcd2:
+    discovery: https://discovery.etcd.io/694c58a7ba9a455321c35c71832bb75f
+    advertise-client-urls: http://$private_ipv4:2379,http://$private_ipv4:4001
+    initial-advertise-peer-urls: http://$private_ipv4:2380
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    listen-peer-urls: http://$private_ipv4:2380
   units:
     - name: etcd2.service
       command: start
@@ -22,9 +28,3 @@ coreos:
 
         [Install]
         WantedBy=sockets.target
-  etcd2:
-    - discovery: https://discovery.etcd.io/694c58a7ba9a455321c35c71832bb75f
-    - advertise-client-urls: http://$private_ipv4:2379,http://$private_ipv4:4001
-    - initial-advertise-peer-urls: http://$private_ipv4:2380
-    - listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
-    - listen-peer-urls: http://$private_ipv4:2380
