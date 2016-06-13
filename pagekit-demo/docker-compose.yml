@@ -1,0 +1,27 @@
+version: '2'
+services:
+    mysql:
+        image: mysql
+        expose:
+            - 3306
+        volumes:
+            - ./data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_DATABASE=cms
+
+    lnmp:
+        image: richarvey/nginx-php-fpm
+        ports:
+            - 80:80
+        #environment:
+            #- MYSQL_DATABASE=cms
+            #- MYSQL_USER=root
+            #- MYSQL_ROOT_PASSWORD=123456
+            #- MYSQL_PASSWORD=123456
+        links:
+            - mysql:db
+        volumes:
+            - ./pagekit:/usr/share/nginx/html
+        depends_on:
+            - mysql
