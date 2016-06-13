@@ -1,6 +1,11 @@
 #cloud-config
 
 coreos:
+  units:
+    - name: etcd2.service
+      command: start
+    - name: fleet.service
+      command: start
   etcd2:
     # generate a new token for each unique cluster from https://discovery.etcd.io/new:
     discovery: https://discovery.etcd.io/a241880727e977ef1835bd8421e5a304
@@ -13,8 +18,3 @@ coreos:
     listen-peer-urls: http://$private_ipv4:2380
   fleet:
     public-ip: $private_ipv4   # used for fleetctl ssh command
-  units:
-    - name: etcd2.service
-      command: start
-    - name: fleet.service
-      command: start
