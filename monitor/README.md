@@ -79,3 +79,15 @@ ps: 上述命令中的storage_driver_db的值为第一步创建的数据库的�
 demo 界面： 
 
 ![Container Stats界面](screenshots/Container_Stats.png)
+
+OneAPM Cloud Insight部署：
+
+```shell
+docker run -d --name oneapm-ci-agent \
+  -h `hostname` \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /proc/:/host/proc/:ro \
+  -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro \
+  -e LICENSE_KEY=YOUR_CLOUD_INSIGHT_LICENSE_KEY \
+  oneapm/docker-oneapm-ci-agent:latest
+```
