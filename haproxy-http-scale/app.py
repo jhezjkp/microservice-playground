@@ -11,7 +11,8 @@ host = socket.gethostname()
 @app.route('/')
 def index():
     redis.incr('hits')
-    return '\nhost:%s\nvisit count:%s\n\n' % (host, redis.get('hits'))
+    return '\nhost:%s\nvisit count:%s\nversion:%s\n\n' % (host,
+            redis.get('hits'), '0.12')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
