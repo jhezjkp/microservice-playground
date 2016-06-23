@@ -75,3 +75,7 @@ ps: 上述命令中的storage_driver_db的值为第一步创建的数据库的�
  ![influxdb数据源配置](screenshots/grafana_influxdb_ds.png)	
 
 再使用Dashboards—>Import功能将面板配置container_stats.json导入。
+
+demo 界面： 
+
+![Container Stats界面](screenshots/Container_Stats.png)
