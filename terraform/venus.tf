@@ -26,10 +26,18 @@ resource "google_compute_instance" "venus" {
         }
     }
 
+    // ssh keys
+    metadata {
+        ssh-keys = "root:${file("~/.ssh/id_rsa.pub")}"
+    }
+
     // set up docker
     metadata_startup_script = "curl -fsSL https://test.docker.com/ | sh"
 
     // 输出ip等到本地
+    provisioner "local-exec" {
+        command = "echo ${google_compute_instance.venus.network_interface.0.access_config.0.assigned_nat_ip} ======"
+    }
     provisioner "local-exec" {
         command = "echo ${google_compute_instance.venus.network_interface.0.access_config.0.assigned_nat_ip} > ip.txt"
     }
@@ -37,4 +45,13 @@ resource "google_compute_instance" "venus" {
         // below command valid for os x
         command = "sed -i '' '/^${google_compute_instance.venus.network_interface.0.access_config.0.assigned_nat_ip}/d' ~/.ssh/known_hosts"
     }
+    // 更新dnspod记录
+    provisioner "local-exec" {
+        command = "curl -X POST https://dnsapi.cn/Record.Create -d 'login_token=${var.dnspod_login_token}&format=json&domain_id=${var.dnspod_domain_id}&sub_domain=${google_compute_instance.venus.name}&record_type=A&record_line=默认&value=${google_compute_instance.venus.network_interface.0.access_config.0.assigned_nat_ip}'"
+    }
+}
+
+// 输出ip
+output "ip" {
+    value = "${google_compute_instance.venus.network_interface.0.access_config.0.assigned_nat_ip}"
 }
