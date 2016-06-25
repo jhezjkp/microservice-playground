@@ -1,0 +1,14 @@
+{
+    "builders" : [
+        {
+          "type": "googlecompute",
+          "account_file": "account.json",
+          "project_id": "primordial-mile-134402",
+          "source_image": "debian-8-jessie-v20160606",
+          "zone": "us-central1-a",
+          "communicator": "ssh",
+          "ssh_bastion_private_key_file": "~/.ssh/id_rsa",
+          "ssh_username": "vivia"
+        }
+    ]
+}
