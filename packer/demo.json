@@ -10,5 +10,12 @@
           "ssh_bastion_private_key_file": "~/.ssh/id_rsa",
           "ssh_username": "vivia"
         }
-    ]
+    ],
+    "provisioners": [{
+        "type": "shell",
+        "inline": [
+            "sleep 30",
+            "sudo curl -fsSL https://test.docker.com/ | sh"
+        ]
+    }]
 }
