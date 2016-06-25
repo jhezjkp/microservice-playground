@@ -15,7 +15,7 @@ variable "instance_names" {
 }
 
 variable "instance_count" {
-    default = 2
+    default = 3
 }
 
 resource "google_compute_instance" "gce" {
@@ -61,6 +61,17 @@ resource "google_compute_instance" "gce" {
     provisioner "local-exec" {
         command = "curl -X POST https://dnsapi.cn/Record.Create -d 'login_token=${var.dnspod_login_token}&format=json&domain_id=${var.dnspod_domain_id}&sub_domain=${lookup(var.instance_names, count.index)}&record_type=A&record_line=默认&value=${self.network_interface.0.access_config.0.assigned_nat_ip}'"
     }
+}
+
+resource "google_compute_firewall" "default" {
+    name = "terraform-rule"
+    network = "default"
+
+    allow {
+        protocol = "tcp"
+        ports = ["8000"]
+    }
+
 }
 
 output "ip" {
