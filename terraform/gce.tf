@@ -15,7 +15,7 @@ variable "instance_names" {
 }
 
 variable "instance_count" {
-    default = 3
+    default = 4
 }
 
 resource "google_compute_instance" "gce" {
@@ -69,7 +69,7 @@ resource "google_compute_firewall" "default" {
 
     allow {
         protocol = "tcp"
-        ports = ["8000"]
+        ports = ["8000", "8500"]
     }
 
 }
