@@ -1,6 +1,16 @@
-# api gateway
+# api gateway: Kong
 
-## 1、启动相关服务
+## 两张架构/部署图解析Kong
+
+
+常规架构：各api服务各自实现自己的认证、限流、日志、缓存等功能模块，带来重复发开、管理烦杂问题。
+![常规架构](https://getkong.org/assets/images/homepage/diagram-left.png)
+
+引入Kong后的架构：由Kong统一负责用户认证、日志记录、缓存、限流等，开箱即用、集中管控。
+![Kong架构](https://getkong.org/assets/images/homepage/diagram-right.png)
+
+## 实战Kong部署
+1、启动相关服务
 
 ```shell
 docker-compose up
