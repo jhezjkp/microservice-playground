@@ -1,3 +1,3 @@
-# docker-playground
+# microservice-playground
 
-this project stores exercises played in docker.
+this project stores exercises played in docker/iaas/paas and so on.
