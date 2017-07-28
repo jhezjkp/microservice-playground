@@ -64,16 +64,20 @@ Vault does not store the master key. Without at least 2 keys,
 your vault will remain permanently sealed.
 ```
 
-务必将5个解封密钥(实践中将由5人分别持有)和root token记录下来
+务必将5个解封密钥(实践中将由5人分别持有)和root token记录下来。
+
+使用vault unseal命令执行解封(不要将解密key直接写在unseal命令之后)
 
 ```shell
-➜  ~ vault unseal RoXg0KS4XbRVjMoF2u2PPIwX9beaOXylVX3uEWkIfETX
+➜  ~ vault unseal
+Key (will be hidden):
 Sealed: true
 Key Shares: 5
 Key Threshold: 2
 Unseal Progress: 1
-Unseal Nonce: a34abfec-6319-7d69-0a54-8afc271bf696
-➜  ~ vault unseal nOdukyiBQXHx5Q12WQENen5Nsn2lFDvGIdjMBZ7JXDvu
+Unseal Nonce: 003dfa27-bc31-2ab1-ef50-6ae889ab4394
+➜  ~ vault unseal
+Key (will be hidden):
 Sealed: false
 Key Shares: 5
 Key Threshold: 2
