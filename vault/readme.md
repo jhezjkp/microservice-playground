@@ -139,5 +139,22 @@ Code: 503. Errors:
 * Vault is sealed
 ```
 
+## 通过Http API访问
+
+除了cli外，还可以通过http api接口访问vault：
+
+```shell
+➜  vault git:(master) ✗ curl -H X-Vault-Token:831fdf18-4f67-3b7c-8937-638a29f137e9  http://localhost:8200/v1/secret/demo_api
+{"request_id":"d031b2ef-15d0-8d32-5aa1-56ecbc05ceb4","lease_id":"","renewable":false,"lease_duration":2764800,"data":{"token":"this_is_api_token","url":"http://api.demo.com"},"wrap_info":null,"warnings":null,"auth":null}
+```
+
+## 启用审计
+
+vault同时支持多个审计后端，以防止其中某个后端被篡改的情况：
+
+```shell
+vault audit-enable file file_path=log/audit.log
+```
+
 
 
