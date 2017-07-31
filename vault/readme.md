@@ -156,6 +156,38 @@ vault同时支持多个审计后端，以防止其中某个后端被篡改的情
 vault audit-enable file file_path=log/audit.log
 ```
 
+所有的请求和响应都会各自对应一条审计日志，日志中的敏感信息(如token)将会被哈希脱敏(HMAC-SHA256)：
+
+```shell
+#查询命令
+➜  vault git:(master) ✗ vault read secret/hello
+Key             	Value
+---             	-----
+refresh_interval	768h0m0s
+value           	world
+```
+
+对应的审计日志
+
+```json
+{"time":"2017-07-31T04:08:36Z","type":"request","auth":{"client_token":"hmac-sha256:3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab","accessor":"hmac-sha256:8ec7f96e2fd3e55a30c4234a00f20286a4bdd63015764fa942e2e2a905718e02","display_name":"root","policies":["root"],"metadata":null},"request":{"id":"5c257f25-2f3f-a4c2-a81b-200aa58f31d0","operation":"read","client_token":"hmac-sha256:3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab","client_token_accessor":"hmac-sha256:8ec7f96e2fd3e55a30c4234a00f20286a4bdd63015764fa942e2e2a905718e02","path":"secret/hello","data":null,"remote_address":"127.0.0.1","wrap_ttl":0,"headers":{}},"error":""}
+{"time":"2017-07-31T04:08:36Z","type":"response","auth":{"client_token":"hmac-sha256:3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab","accessor":"hmac-sha256:8ec7f96e2fd3e55a30c4234a00f20286a4bdd63015764fa942e2e2a905718e02","display_name":"root","policies":["root"],"metadata":null},"request":{"id":"5c257f25-2f3f-a4c2-a81b-200aa58f31d0","operation":"read","client_token":"hmac-sha256:3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab","client_token_accessor":"hmac-sha256:8ec7f96e2fd3e55a30c4234a00f20286a4bdd63015764fa942e2e2a905718e02","path":"secret/hello","data":null,"remote_address":"127.0.0.1","wrap_ttl":0,"headers":{}},"response":{"secret":{"lease_id":""},"data":{"value":"hmac-sha256:1882b67e2dcce6aebac6bc907912e0dab1dc6c0bf50667145eea4046479da1a0"}},"error":""}
+```
+
+vault提供了一个查询token对应的HMAC-SHA256哈希值的api，通过它可以查询对应的哈希值：
+
+```shell
+#先查询审计类型
+➜  vault git:(master) ✗ vault audit-list
+Path   Type  Description  Replication Behavior  Options
+file/  file               replicated            file_path=log/audit.log
+#之前的审计日志是文件类型，查询对应审计日志中token的哈希值时需要指定是哪个审计日志的
+➜  vault git:(master) ✗ curl -H X-Vault-Token:831fdf18-4f67-3b7c-8937-638a29f137e9 -d '{"input": "831fdf18-4f67-3b7c-8937-638a29f137e9"}' -X POST http://localhost:8200/v1/sys/audit-hash/file
+{"hash":"hmac-sha256:3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab","request_id":"86e26b70-f649-c807-b9cd-c73bbfe841bf","lease_id":"","renewable":false,"lease_duration":0,"data":{"hash":"hmac-sha256:3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab"},"wrap_info":null,"warnings":null,"auth":null}
+```
+
+从响应的结果中可以看到831fdf18-4f67-3b7c-8937-638a29f137e9这个token的哈希值为3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab，与之前的审计日志匹配。
+
 ## 策略(policy)与token管理
 
 vault中的一切都是基于路径的，策略对指定路径进行声明式允许或禁止以达到操作管理的目的。默认的策略是禁止。
