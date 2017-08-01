@@ -1,5 +1,17 @@
 # [Hashicorp]vault-机密管理服务实战
 
+## 概述
+
+[vault](https://www.vaultproject.io)是一个用于管控机密数据访问的工具，可以用于管理API密钥、密码、证书等等机密数据，vault提供了统一的接口来访问这些机密数据的接口，严格控制访问权限并记录详细的审计日志。
+
+vault设计原则:
+
++ 密钥轮转过期支持：vault颁发的密钥支持时效和次效两种特性，支持续约和撤销
++ 安全分发：TLS加密和cubbyhole分发密钥防止中间人攻击
++ 最小暴露原则：vault略论策略为禁止，最小化权限以防止数据被非授权访问
++ 访问侦测：所有访问和响应数据都有审计日志
++ 安全模式：vault提供一种安全模式，当检测到入侵时，可以将数据密封，以阻止数据泄露
+
 ## 配置
 
 vault.conf
@@ -313,3 +325,7 @@ username       	v-root-readonly-QbqYwRIkzjazZ5jc
 #拿到的账号在1小时内有效，到期后该账号会被删除，但已建立的连接不会被断开，可以继续使用
 ```
 
+## 参考
+
+[1]: https://sreeninet.wordpress.com/2016/10/01/vault-overview/	"vault overview"
+[2]: https://sreeninet.wordpress.com/2016/10/01/vault-use-cases/	"vault use cases"
