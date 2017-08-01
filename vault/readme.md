@@ -4,7 +4,7 @@
 
 [vault](https://www.vaultproject.io)是一个用于管控机密数据访问的工具，可以用于管理API密钥、密码、证书等等机密数据，vault提供了统一的接口来访问这些机密数据的接口，严格控制访问权限并记录详细的审计日志。
 
-vault设计原则:
+vault设计原则[^1]:
 
 + 密钥轮转过期支持：vault颁发的密钥支持时效和次效两种特性，支持续约和撤销
 + 安全分发：TLS加密和cubbyhole分发密钥防止中间人攻击
@@ -364,8 +364,79 @@ username       	v-root-readonly-QbqYwRIkzjazZ5jc
 #拿到的账号在1小时内有效，到期后该账号会被删除，但已建立的连接不会被断开，可以继续使用
 ```
 
+## cubbyhole机密模块
+
+每个token在cubbyhole都有各自的作用域，且只能操作自己作用域内的数据，一旦对应的token被销毁则对应的数据也将被销毁。
+
+vault官方曾在一篇博文[^3]里介绍了一种基于cubbyhole来分发临时/永久token对以便应用程序获取诸如数据库密码、api token之类的方案，旨在解决直接将可以获取机密的token配置在环境变量或配置文件易泄密的问题，具体流程如下：
+
+1. 生成一个永久token，该token可以访问应用程序需要的机密数据，如数据库密码、api token等，并附加相关安全策略
+2. 生成一个临时token，指定有效期和有效使用次数(4次，认证消耗2次，写入读取各消耗1次)，将步骤1生成的永久token写入该token的cubbyhole
+3. 分发步骤2生成的临时token给目标应用程序，目标应用程序认证并获取到永久token，然后再通过该永久token获取最终需要的机密数据(数据库密码、api token等)
+
+文章还讨论了三种实现方案(push/pull/coprocesses)的优劣，但最根本的是这个方案需要开发一套token分发程序来进行分发，而后的vault 0.6版新增加的Response Wrapping特性[^4]则直接给出了一个push方案的实现，下面是使用示例：
+
+```shell
+#假设我们把把程序api token存储在了secret/demo_api下
+➜  vault git:(master) ✗ vault read secret/demo_api
+Key             	Value
+---             	-----
+refresh_interval	768h0m0s
+token           	this_is_api_token
+url             	http://api.demo.com
+#并配置了demo-policy策略限制了对该机密的访问权限
+➜  vault git:(master) ✗ vault read sys/policy/demo-policy
+Key  	Value
+---  	-----
+name 	demo-policy
+rules	# allow read secret/demo*
+path "secret/demo*" {
+    capabilities = ["read"]
+}
+#包装一个对secret/demo_api的读取访问，限制其生成的token有效期为60秒
+➜  vault git:(master) ✗ vault read -wrap-ttl=60 secret/demo_api
+Key                          	Value
+---                          	-----
+wrapping_token:              	b8f75ec5-f431-d434-6a1a-2dea982925b1
+wrapping_token_ttl:          	1m0s
+wrapping_token_creation_time:	2017-08-01 21:08:04.786250331 +0800 CST
+#在60秒内进行unwrap操作即可得到对应的机密数据
+➜  vault git:(master) ✗ vault unwrap b8f75ec5-f431-d434-6a1a-2dea982925b1
+Key             	Value
+---             	-----
+refresh_interval	768h0m0s
+token           	this_is_api_token
+url             	http://api.demo.com
+#尝试第二次访问时将直接提示token无效
+➜  vault git:(master) ✗ vault unwrap b8f75ec5-f431-d434-6a1a-2dea982925b1
+Error making API request.
+
+URL: PUT http://127.0.0.1:8200/v1/sys/wrapping/unwrap
+Code: 400. Errors:
+
+* wrapping token is not valid or does not exist
+#下面展示的是生成了一个6秒有效期，并在6秒后unwrap的情况，也是提示token无效
+➜  vault git:(master) ✗ vault read -wrap-ttl=6 secret/demo_api
+Key                          	Value
+---                          	-----
+wrapping_token:              	ac4f4e56-d817-d1c3-5ac7-d14107e72028
+wrapping_token_ttl:          	6s
+wrapping_token_creation_time:	2017-08-01 21:08:56.199920409 +0800 CST
+➜  vault git:(master) ✗ vault unwrap ac4f4e56-d817-d1c3-5ac7-d14107e72028
+Error making API request.
+
+URL: PUT http://127.0.0.1:8200/v1/sys/wrapping/unwrap
+Code: 400. Errors:
+
+* wrapping token is not valid or does not exist
+```
+
+
+
 ## 参考
 
-[1]: https://sreeninet.wordpress.com/2016/10/01/vault-overview/	"vault overview"
-[2]: https://sreeninet.wordpress.com/2016/10/01/vault-use-cases/	"vault use cases"
 
+[^1]: https://sreeninet.wordpress.com/2016/10/01/vault-overview/
+[^2]: https://sreeninet.wordpress.com/2016/10/01/vault-use-cases/
+[^3]: https://www.hashicorp.com/blog/cubbyhole-authentication-principles/
+[^4]: https://www.hashicorp.com/blog/vault-0-6/
