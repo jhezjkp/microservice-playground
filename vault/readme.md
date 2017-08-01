@@ -286,3 +286,30 @@ token创建后就无法变更其对应的策略，如果需要修改，可以通
 + 撤销当前的token，重新生成一个附加了新策略的token
 + 修改当前token对应的策略
 
+## databases机密模块
+
+```shell
+#启用databases模块
+➜  vault git:(master) ✗ vault mount database
+Successfully mounted 'database' at 'database'!
+#配置mysql插件，注意替换password为真正的密码
+➜  vault git:(master) ✗ vault write database/config/mysql plugin_name=mysql-database-plugin connection_url="root:password@tcp(127.0.0.1:3306)/" allowed_roles="readonly"
+
+
+The following warnings were returned from the Vault server:
+* Read access to this endpoint should be controlled via ACLs as it will return the connection details as is, including passwords, if any.
+#配置role
+➜  vault git:(master) ✗ vault write database/roles/readonly db_name=mysql creation_statements="create user '{{name}}'@'%' identified by '{{password}}'; grant select on *.* to '{{name}}'@'%';" default_ttl="1h"
+Success! Data written to: database/roles/readonly
+#获取一个账号
+➜  vault git:(master) ✗ vault read database/creds/readonly
+Key            	Value
+---            	-----
+lease_id       	database/creds/readonly/a087901a-8149-77f9-07dc-67773c9d9c72
+lease_duration 	1h0m0s
+lease_renewable	true
+password       	bc49e512-975a-94b2-4fa8-fddba0a7a527
+username       	v-root-readonly-QbqYwRIkzjazZ5jc
+#拿到的账号在1小时内有效，到期后该账号会被删除，但已建立的连接不会被断开，可以继续使用
+```
+
