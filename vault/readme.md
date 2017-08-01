@@ -291,6 +291,45 @@ URL: DELETE http://127.0.0.1:8200/v1/secret/demo_api
 Code: 403. Errors:
 
 * permission denied
+#创建一个只有两次有效次数的token
+➜  vault git:(master) ✗ vault token-create --use-limit=2 -policy=demo-policy　
+Key            	Value
+---            	-----
+token          	6dc6d978-faba-c2eb-91b9-81bb665d9207
+token_accessor 	f8d9a2e9-eb9f-16ba-978e-00b34619a8e1
+token_duration 	0s
+token_renewable	false
+token_policies 	[root]
+#在新终端中测试刚生成的token，认证使用一次，读取机密使用一次，第二次读取时vault就提示无权限了
+➜  vault git:(master) ✗ vault auth
+Token (will be hidden):
+Successfully authenticated! You are now logged in.
+token: 6dc6d978-faba-c2eb-91b9-81bb665d9207
+token_duration: 0
+token_policies: [root]
+➜  vault git:(master) ✗ vault read secret/demo_api
+Key             	Value
+---             	-----
+refresh_interval	768h0m0s
+token           	this_is_api_token
+url             	http://api.demo.com
+
+➜  vault git:(master) ✗ vault read secret/demo_api
+Error reading secret/demo_api: Error making API request.
+
+URL: GET http://127.0.0.1:8200/v1/secret/demo_api
+Code: 403. Errors:
+
+* permission denied
+#创建一个2分钟有效期的token
+➜  vault git:(master) ✗ vault token-create -ttl=2m -renewable=false -policy=demo-policy　
+Key            	Value
+---            	-----
+token          	926a2fa8-a8ad-3ff5-aa5d-7ecda58b609a
+token_accessor 	bb93f49a-e463-0e92-1e34-6aa29b4d19a3
+token_duration 	2m0s
+token_renewable	true
+token_policies 	[root]
 ```
 
 token创建后就无法变更其对应的策略，如果需要修改，可以通过以下方式实现：
@@ -329,3 +368,4 @@ username       	v-root-readonly-QbqYwRIkzjazZ5jc
 
 [1]: https://sreeninet.wordpress.com/2016/10/01/vault-overview/	"vault overview"
 [2]: https://sreeninet.wordpress.com/2016/10/01/vault-use-cases/	"vault use cases"
+
