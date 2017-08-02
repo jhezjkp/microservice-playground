@@ -1,4 +1,8 @@
-# pgp
+# gpg
+
+> 1991年，程序员[Phil Zimmermann](http://en.wikipedia.org/wiki/Phil_Zimmermann)为了避开政府监视，开发了加密软件PGP。这个软件非常好用，迅速流传开来，成了许多程序员的必备工具。但是，它是商业软件，不能自由使用。所以，自由软件基金会决定，开发一个PGP的替代品，取名为GnuPG。这就是GPG的由来。
+>
+> 引用自：[阮一峰的网络日志](http://www.ruanyifeng.com/blog/2013/07/gpg.html)
 
 ## 下载安装
 
@@ -6,7 +10,7 @@
 
 ## 生成密钥
 
-使用pgp --gen-key密码，按提示输入名字和email及一段口令即可生成，记得把口令记录下来，导出私钥、解密时会用到。
+使用gpg --gen-key密码，按提示输入名字和email及一段口令即可生成，记得把口令记录下来，导出私钥、解密时会用到。
 
 ```shell
 ➜  ~ gpg --gen-key
