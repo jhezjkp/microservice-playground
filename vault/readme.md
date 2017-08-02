@@ -337,6 +337,8 @@ token创建后就无法变更其对应的策略，如果需要修改，可以通
 + 撤销当前的token，重新生成一个附加了新策略的token
 + 修改当前token对应的策略
 
+生成token时，会同时生成一个token_accessor，token_accessor与token是一一对应的，为保证只有被授予token的人才持有具体的token，因此不能直接存档token，但事后需要查询该token对应的信息(如附加的策略)或撤销该token时，我们可以通过记录对应的token_accessor，再通过调用/auth/token/lookup-accessor[/accessor]和/auth/token/revoke-accessor这两个接口进行(或通过应用的命令行加-accessor选项传token_accessor达成目标)。另外，在配置审计模块时，我们可以加一个hmac_accessor=false配置，这样审计系统就不会对token-accessor进行哈希了，定位具体用户就更方便了。
+
 ## databases机密模块
 
 ```shell
