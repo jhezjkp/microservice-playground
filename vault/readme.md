@@ -391,8 +391,70 @@ rules
 path "secret/demo*" {
     capabilities = ["read"]
 }
+
+#写入新策略的方式1
 ➜  vault git:(master) ✗ vault write sys/policy/demo-policy rules=@demo-policy.hcl
 Success! Data written to: sys/policy/demo-policy
+
+#写入新策略的方式2
+➜  vault git:(master) ✗ vault policy-write dev-policy dev-policy.hcl
+Policy 'dev-policy' written.
+```
+
+## token认证模块
+
+### token概述
+
+token是vault最核心的认证方式，也是内建并默认启用的认证方式，其他认证方式直接或间接与token产生关联并通过对应token访问vault。
+
+### root token
+
+vault初始化时会生成一个root token，附加了root策略，拥有vault的最高权限，可以执行任意操作。初始化完成并配置好相关策略后应该立即撤销，需要时再行建立。同时，当root token存续时，应当有多人监督其使用，直到撤销，以确保安全。
+
+### token的继承机制和孤儿token
+
+一般而言，当token持有人创建新token时，默认情况下新的token将以当前token的子token身份生成并自动继承其策略。当父token撤销时，所有子token及其租期都将被撤销。
+
+但有时，这样的情况并不是我们所期望的，这就有了孤儿token的产生。孤儿token可以通过以下方式产生：
+
+1. 通过auth/token/create-orpha端点
+2. 使用sudo权限的token或root token在auth/token/create端点设置orphan参数生成
+3. 通过预设子生成孤儿token的角色
+4. 以其他非token认证方式登录
+
+另外，还可以通过auth/token/revoke-orphan端点来撤销指定token而保留其子token。
+
+### token accessors
+
+生成token时，会同时生成一个token_accessor，token_accessor与token是一一对应的。通过token accessor可以执行以下操作：
+
++ 查询token属性
++ 查询指定token在某一路径上的权限
++ 撤销token
+
+为保证只有被授予token的人才持有具体的token，因此不能直接存档token，但事后需要查询该token对应的信息(如附加的策略)或撤销该token时，我们可以通过记录对应的token_accessor，再通过调用/auth/token/lookup-accessor[/accessor]和/auth/token/revoke-accessor这两个接口进行(或通过应用的命令行加-accessor选项传token_accessor达成目标)。
+
+另外，在配置审计模块时，我们可以加一个hmac_accessor=false配置，这样审计系统就不会对token accessor进行哈希了，这样不但有利于定位具体用户，在审计日志中发现异常时也可以立即根据token accessor对token进行撤销操作。
+
+### token的TTL和续约
+
+所有的非root token都有TTL(time-to-live)属性，指的是token创建后的存续时间，或者续约后的存续时间(如果有执行续约)。当TTL降到0后，token将失效，租约到期，然后被撤销。
+
+当token执行续约操作时，如果是一个周期性token，则将续约一个新的周期，否则将续约到指定的最大TTL值。
+
+如果系统没有显示设置最大TTL值，默认最大TTL值将由以下情况决定：
+
+1. 如果vault配置文件未指定则默认为32天
+2. 挂载时指定了最大TTL值则以该值为准
+3. 分发token的认证后端的建议值
+
+### 周期性token
+
+周期性token每次续约都是固定的时间，只要成功续约了就无法撤销。如果一个周期性token还另外显式指定了最大TTL值，则其续约还是按固定时长，但达到最大TTL值时将会被撤销。
+
+### token操作实践
+
+```shell
 #创建一个token，将继承执行创建token的token的策略
 ➜  vault git:(master) ✗ vault token-create
 Key            	Value
@@ -504,10 +566,8 @@ token_policies 	[root]
 
 token创建后就无法变更其对应的策略，如果需要修改，可以通过以下方式实现：
 
-+ 撤销当前的token，重新生成一个附加了新策略的token
-+ 修改当前token对应的策略
-
-生成token时，会同时生成一个token_accessor，token_accessor与token是一一对应的，为保证只有被授予token的人才持有具体的token，因此不能直接存档token，但事后需要查询该token对应的信息(如附加的策略)或撤销该token时，我们可以通过记录对应的token_accessor，再通过调用/auth/token/lookup-accessor[/accessor]和/auth/token/revoke-accessor这两个接口进行(或通过应用的命令行加-accessor选项传token_accessor达成目标)。另外，在配置审计模块时，我们可以加一个hmac_accessor=false配置，这样审计系统就不会对token-accessor进行哈希了，定位具体用户就更方便了。
+- 撤销当前的token，重新生成一个附加了新策略的token
+- 修改当前token对应的策略
 
 ## AppRole认证模块
 
