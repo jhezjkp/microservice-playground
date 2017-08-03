@@ -1,5 +1,7 @@
 # [Hashicorp]vault-机密管理服务实战
 
+[TOC]
+
 ## 概述
 
 [vault](https://www.vaultproject.io)是一个用于管控机密数据访问的工具，可以用于管理API密钥、密码、证书等等机密数据，vault提供了统一的接口来访问这些机密数据的接口，严格控制访问权限并记录详细的审计日志。
@@ -506,6 +508,107 @@ token创建后就无法变更其对应的策略，如果需要修改，可以通
 + 修改当前token对应的策略
 
 生成token时，会同时生成一个token_accessor，token_accessor与token是一一对应的，为保证只有被授予token的人才持有具体的token，因此不能直接存档token，但事后需要查询该token对应的信息(如附加的策略)或撤销该token时，我们可以通过记录对应的token_accessor，再通过调用/auth/token/lookup-accessor[/accessor]和/auth/token/revoke-accessor这两个接口进行(或通过应用的命令行加-accessor选项传token_accessor达成目标)。另外，在配置审计模块时，我们可以加一个hmac_accessor=false配置，这样审计系统就不会对token-accessor进行哈希了，定位具体用户就更方便了。
+
+## AppRole认证模块
+
+AppRole模块允许机器或服务(应用)通过预定义的角色(role-id+secret-id)进行vault认证以获取运行时需要的机密数据。该模块的流程如下：
+
+1. 创建role，预设secret-id策略(有效时间、有效使用次数等)、生成的token的有效时间、有效使用次数和附加的策略等
+2. 生成role-id，一个role只有一个role-id(可以通过api将role-id修改成自定义值)
+3. 生成并分发secret-id
+4. 目标机器或服务拿到role-id和secret-id后进行认证，成功后即可获得一个token
+5. 使用步骤4获取的token向vault获取机密数据
+
+与生成token分发机器或服务获取机密数据的方案相比，AppRole方案有以下优势：
+
++ 同一应用使用同一app-id，便于审计
++ 可以更新AppRole变更token对应的策略(token生成后无法变更策略)
++ 可以限定指定ip范围才能登录
+
+```shell
+#启用approle认证模块
+➜  vault git:(master) ✗ vault auth-enable approle
+Successfully enabled 'approle' at 'approle'!
+
+#生成demo-role
+➜  vault git:(master) ✗ vault write auth/approle/role/demo-role secret_id_ttl=10m token_num_uses=3 token_ttl=20m token_max_ttl=30m secret_id_num_uses=4 policies=demo-policy
+Success! Data written to: auth/approle/role/demo-role
+
+#查看新创建的demo-role
+➜  vault git:(master) ✗ vault read auth/approle/role/demo-role
+Key               	Value
+---               	-----
+bind_secret_id    	true
+bound_cidr_list
+period            	0
+policies          	[default demo-policy]
+secret_id_num_uses	4
+secret_id_ttl     	600
+token_max_ttl     	1800
+token_num_uses    	3
+token_ttl         	1200
+
+#获取role-id
+➜  vault git:(master) ✗ vault read auth/approle/role/demo-role/role-id
+Key    	Value
+---    	-----
+role_id	e6acd222-9dc0-80f8-b8b3-728cc2f09df3
+#为保证role-id的机密性，可以使用response wrapping特性来获取
+➜  vault git:(master) ✗ vault read -wrap-ttl=50 auth/approle/role/demo-role/role-id
+Key                          	Value
+---                          	-----
+wrapping_token:              	dc729e29-f4d5-9e57-24d7-4979d2de54dc
+wrapping_token_ttl:          	50s
+wrapping_token_creation_time:	2017-08-03 16:47:31.890395205 +0800 CST
+➜  vault git:(master) ✗ vault unwrap dc729e29-f4d5-9e57-24d7-4979d2de54dc
+Key    	Value
+---    	-----
+role_id	e6acd222-9dc0-80f8-b8b3-728cc2f09df3
+
+#获取SecretID，同样可以使用response wrapping特性，此处省略
+➜  vault git:(master) ✗ vault write -f auth/approle/role/demo-role/secret-id
+Key               	Value
+---               	-----
+secret_id         	d3f47b60-b51f-8d41-0fd6-d87203c0ce32
+secret_id_accessor	49478b25-58e1-ff06-153f-067c29f34917
+
+#新开一个终端测试新的role-id和secret-id
+➜  vault git:(master) ✗ vault write auth/approle/login role_id=e6acd222-9dc0-80f8-b8b3-728cc2f09df3 secret_id=f6b24bb0-d5b7-bd1b-5a69-a04782e443cb
+Key            	Value
+---            	-----
+token          	337be25d-7754-5018-7520-9b62f308ad2f
+token_accessor 	1b7dacad-1613-9941-0e9c-73e693466ead
+token_duration 	20m0s
+token_renewable	true
+token_policies 	[default demo-policy]
+#拿到token后认证并获取secret/demo_api的数据，根据创建demo-role时的配置，该token在20分钟或使用3次后失效
+➜  vault git:(master) ✗ curl -H X-Vault-Token:bd7edde3-da0c-599a-030a-caee9bb86bfd  http://localhost:8200/v1/secret/demo_api
+{"request_id":"3ab6bd31-50fe-a967-6445-d0ba0a4587b4","lease_id":"","renewable":false,"lease_duration":2764800,"data":{"token":"this_is_api_token","url":"http://api.demo.com"},"wrap_info":null,"warnings":null,"auth":null}
+
+#根据secret-id-accessort查询secret-id情况
+➜  vault git:(master) ✗ curl -X "POST" "http://127.0.0.1:8200/v1/auth/approle/role/demo-role/secret-id-accessor/lookup" \
+     -H "X-Vault-Token: 831fdf18-4f67-3b7c-8937-638a29f137e9" \
+     -d $'{
+  "secret_id_accessor": "7a2ebf58-2aaa-f86f-b74e-a4084a375600"
+}'
+
+{"request_id":"7104cfa4-c108-a1a8-ae8d-b1437d2cce5c","lease_id":"","renewable":false,"lease_duration":0,"data":{"SecretIDNumUses":0,"cidr_list":[],"creation_time":"2017-08-03T18:00:49.527774493+08:00","expiration_time":"2017-08-03T18:10:49.527774493+08:00","last_updated_time":"2017-08-03T18:00:49.527774493+08:00","metadata":{},"secret_id_accessor":"7a2ebf58-2aaa-f86f-b74e-a4084a375600","secret_id_num_uses":4,"secret_id_ttl":600},"wrap_info":null,"warnings":["The field SecretIDNumUses is deprecated and will be removed in a future release; refer to secret_id_num_uses instead"],"auth":null}
+
+#查询secret-id列表
+➜  vault git:(master) ✗ curl "http://127.0.0.1:8200/v1/auth/approle/role/demo-role/secret-id?list=true" \
+     -H "X-Vault-Token: 831fdf18-4f67-3b7c-8937-638a29f137e9"
+{"request_id":"59877ba0-afb0-f2e4-a6aa-b8785fb6f427","lease_id":"","renewable":false,"lease_duration":0,"data":{"keys":["b2827fd6-81de-72de-439d-e3044adac2f2","58392d25-ceb1-1d2f-0f3b-92f27b431f50","95d47302-b159-8d63-a1f7-83908fcc63a7","bf28809d-9d97-a15e-3079-dd3d65a88d31","389a9122-8366-f44e-ada6-ddf4e94ffaa6","ca5e07cb-988b-0e7c-7401-20e36d088e41"]},"wrap_info":null,"warnings":null,"auth":null}
+
+#撤销secret-id
+curl -X "POST" "http://127.0.0.1:8200/v1/auth/approle/role/demo-role/secret-id-accessor/destroy" \
+     -H "X-Vault-Token: 831fdf18-4f67-3b7c-8937-638a29f137e9" \
+     -d $'{
+  "secret_id_accessor": "353bd028-8088-1631-1055-69291d719560"
+}'
+
+```
+
+
 
 ## databases机密模块
 
