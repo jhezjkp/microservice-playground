@@ -232,6 +232,8 @@ http://api.demo.com%
 Success! Deleted 'secret/password' if it existed.
 ```
 
+注意，使用命令行认证成功后登录数据将会存储在`$HOME/.vault-token`中，后续命令将直接使用该文件中的内容进行认证，如果文件不存在了则需要重新认证。
+
 ## 密封
 
 执行密封命令后，vault将停止服务，直至解封
