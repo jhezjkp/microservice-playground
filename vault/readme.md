@@ -97,6 +97,103 @@ Unseal Progress: 0
 Unseal Nonce:
 ```
 
+在具体的生产环境实践中，在初始化vault时，为防止执行初始化操作的人直接看到生成的解封密钥，可以在初始化时指定加密公钥的办法将生成的解封密钥加密输出，仅持有对应密钥的人才能解密得到原始解封密钥以确保vault的安全[^5]，以下以gpg为例来进行说明：
+
+```shell
+#vivia.asc是gpg公钥，演示时都使用同一人的公钥
+➜  ~ vault init -key-shares=3 -key-threshold=2 \
+    -pgp-keys="vivia.asc,vivia.asc,vivia.asc"
+Unseal Key 1: wcBMA1qBDjHh2tL6AQgAhreszZMElunmjnclWwpGA+WSiPbeYGFVdzHrpkkmMNz4fkwT70KJcqyOziWpf+GDba6QtIhId8+mIAz3XV5ea18/rcENYmjbuLWjbeExr3AiSWsKyVL/KP35tIPRZ5umN2TshPeIdWr6PLFDo9z6kC/jRDpN7Jfd6HhC/PyTcA54HY6tJZSMuE3nOUf8A9pAdIN1uI8DbFMyIXGuG0lbpXhBQsq9RxfP/X9t/8X7pXDlY/eb8UJrDKQ8e43Z6g3sLU22Eb8G1fJA0JTcXtUS07RylFv0J5uXuVvLGzvhKsXOa4kbvK+RhMEc4I1ukzQqFUrLhCGzs7Z7yqFg+P50cNLgAeRfavfu6kHOClGNSzQMzOyU4erW4BfgPOGJQ+AF4s+QZivgPOZrHJlZuWxEX9A2/bIrl9NZOe07DQCJoUypyGoeTvaMQ0JszERoz5k+R/chVZCK/t8yAIAjcR0PKYF3P6RuSkdR4L3hOpjgcuSoN6wGaAi4WRcNnO3/9kAP4tJqsizhZXsA
+Unseal Key 2: wcBMA1qBDjHh2tL6AQgAJ1pGWrR2jPwBcxPxO3sIxWP5wwFryhW3NJ/onH5LbWC7/kX2R1qKW2cydIsW7c/9ydovyCJoHrXKPoSDivMCz7POPeF66PaRKfi+Lsxda4ALU9YbUUr6id64xguuYO3I3gT272rhZ4L3ppasQIKc24K1vaIbyhWTbWS2LA6pvC5oAmePgJa9cxbcTAoS1m8yZ63qdyZf8QnPV9e3vnSCPXzrPYmReEq4AozzmqGRxFRUSaA6Zb/O+wQUDY9qPaK95jwPcVhQKqMj+UceHe7RxXYXdThFyOE/vzzwJdOhqYwNldx5TGEUARKtPlqXaNlji61cGBQLtG3enNS35PInudLgAeTSinPMsUDe30EKHr8lV2pp4T024JTgNOFXGOBx4pH3ux7g7+YvhOWd2zEFhbNkkoMkUlpJXlpI2DnDPDBkmSntL7O2bhzGPg4HoH4TjJo0Rxt1YGByZVIpu/ahMjQAX+rmed+T4B7hr+LgWuSM30R9oA735GJQeNmkWQ7b4tf5jK7hb0sA
+Unseal Key 3: wcBMA1qBDjHh2tL6AQgAXeUwEcPkoEZt7LVaspL72IWvlc2PEDtlyYuO+PLidvNEAdALCvEEcs5zUFzYBxFAm5JqwHHYmxmiELmsXCFGRfkKXHFVetLAWstFkuLZ3e9yz7bU7d4R2hRviel9hTDm1T/MsCqiT40pETWj5WUpzlbYMUFmFySXomqxVhmoqH4T6sznyedIntZXP5Yrqel3mNaVgB4G3E5qZ6czC0b7QV8uVv026lUV2F9JZ4OXCXEJub0dq5qk4d+bpuutjwzPYhfOZhRFFPHK6xFB7j+UpguQHlpIiExi3TgN9OYF5xWQ6cexs+bHUyQaDqUoXtzSjaGGC75LuUKNz+E2p1s8udLgAeSwhebNvjhO8aWQ/tXVwqp34Qv+4PPgCOEe9OAU4l0XqHbgN+b3nKfY5obUFy7e2MluP0f0zeDjl57Nm8SiHawVScdkPi7WiR7QWUhchmqqKyvIkmu7LHpx3u8Di8VgLLEfGoZ74Ljhu4fgXOSAGGlslKt8TCxsEIfqoAZG4ruHjIfhIvsA
+Initial Root Token: 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
+
+Vault initialized with 3 keys and a key threshold of 2. Please
+securely distribute the above keys. When the vault is re-sealed,
+restarted, or stopped, you must provide at least 2 of these keys
+to unseal it again.
+
+Vault does not store the master key. Without at least 2 keys,
+your vault will remain permanently sealed.
+#解密解封密钥，生产环境应该是由持有解密密钥的人各自到自己的机器上进行
+➜  ~ echo "wcBMA1qBDjHh2tL6AQgAhreszZMElunmjnclWwpGA+WSiPbeYGFVdzHrpkkmMNz4fkwT70KJcqyOziWpf+GDba6QtIhId8+mIAz3XV5ea18/rcENYmjbuLWjbeExr3AiSWsKyVL/KP35tIPRZ5umN2TshPeIdWr6PLFDo9z6kC/jRDpN7Jfd6HhC/PyTcA54HY6tJZSMuE3nOUf8A9pAdIN1uI8DbFMyIXGuG0lbpXhBQsq9RxfP/X9t/8X7pXDlY/eb8UJrDKQ8e43Z6g3sLU22Eb8G1fJA0JTcXtUS07RylFv0J5uXuVvLGzvhKsXOa4kbvK+RhMEc4I1ukzQqFUrLhCGzs7Z7yqFg+P50cNLgAeRfavfu6kHOClGNSzQMzOyU4erW4BfgPOGJQ+AF4s+QZivgPOZrHJlZuWxEX9A2/bIrl9NZOe07DQCJoUypyGoeTvaMQ0JszERoz5k+R/chVZCK/t8yAIAjcR0PKYF3P6RuSkdR4L3hOpjgcuSoN6wGaAi4WRcNnO3/9kAP4tJqsizhZXsA" | base64 -D | gpg -dq
+ce5a5b27fd8449b03b7b0672f5ba32a1aee5767efff69640d4c46e6ae40b2512d4
+➜  ~ echo "wcBMA1qBDjHh2tL6AQgAJ1pGWrR2jPwBcxPxO3sIxWP5wwFryhW3NJ/onH5LbWC7/kX2R1qKW2cydIsW7c/9ydovyCJoHrXKPoSDivMCz7POPeF66PaRKfi+Lsxda4ALU9YbUUr6id64xguuYO3I3gT272rhZ4L3ppasQIKc24K1vaIbyhWTbWS2LA6pvC5oAmePgJa9cxbcTAoS1m8yZ63qdyZf8QnPV9e3vnSCPXzrPYmReEq4AozzmqGRxFRUSaA6Zb/O+wQUDY9qPaK95jwPcVhQKqMj+UceHe7RxXYXdThFyOE/vzzwJdOhqYwNldx5TGEUARKtPlqXaNlji61cGBQLtG3enNS35PInudLgAeTSinPMsUDe30EKHr8lV2pp4T024JTgNOFXGOBx4pH3ux7g7+YvhOWd2zEFhbNkkoMkUlpJXlpI2DnDPDBkmSntL7O2bhzGPg4HoH4TjJo0Rxt1YGByZVIpu/ahMjQAX+rmed+T4B7hr+LgWuSM30R9oA735GJQeNmkWQ7b4tf5jK7hb0sA" | base64 -D | gpg -dq
+4924c349c68805b24e61e489183785d2cd2711048a7b5ae423453e523c6867051c
+#拿到两外密钥即可执行解封，生产环境应该是由持有解密密钥的人各自到自己的机器上进行
+➜  ~ vault unseal
+Key (will be hidden):
+Sealed: true
+Key Shares: 3
+Key Threshold: 2
+Unseal Progress: 1
+Unseal Nonce: f79ee25d-e0b3-5516-04f9-747af99546f2
+➜  ~ vault unseal
+Key (will be hidden):
+Sealed: false
+Key Shares: 3
+Key Threshold: 2
+Unseal Progress: 0
+Unseal Nonce:
+➜  ~ vault status
+Sealed: false
+Key Shares: 3
+Key Threshold: 2
+Unseal Progress: 0
+Unseal Nonce:
+Version: 0.7.3
+Cluster Name: vault-cluster-6d0d0169
+Cluster ID: d6f3bf2c-b44d-14c8-f08c-d36ecca921a7
+
+High-Availability Enabled: false
+```
+
+另外，在生产环境root token将在完成基础设置后撤销，需要时再行生成一个新的：
+
+```shell
+#撤销root token
+➜  ~ vault token-revoke 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
+Success! Token revoked if it existed.
+➜  ~ vault token-lookup 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
+error looking up token: Error making API request.
+
+URL: POST http://127.0.0.1:8200/v1/auth/token/lookup
+Code: 403. Errors:
+
+* permission denied
+#当需要时，再生成一个root token，需要提供持有root token人的pgp公钥，并需要2个解封密钥授权
+➜  ~ vault generate-root -pgp-key="vivia.asc"
+Root generation operation nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Key (will be hidden):
+Nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Started: true
+Generate Root Progress: 1
+Required Keys: 2
+Complete: false
+PGP Fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907
+➜  ~ vault generate-root -pgp-key="vivia.asc"
+Root generation operation nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Key (will be hidden):
+Nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Started: true
+Generate Root Progress: 2
+Required Keys: 2
+Complete: true
+PGP Fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907
+
+Encoded root token: wcBMA1qBDjHh2tL6AQgAI+Tx2bXsLAXEnx/q5p/OfZMZcfS0sPhAo4abQxCH4BWcVpTXYIG91KOxqVD4SfsrC9qDM+22+Hsw8qPCFyaTNB6RpisJyZO+tr1/hXbp3Jphwpu02llGNmE03LS5P4VveSLg/qJNbKXT0bFlub57mNFFPgND1I/4YV/7v+plOFSpY6ENr+AvO24gbggOWux/eG1+4CF9OBYbV7ua1zgTzqk6LOlfPEkhnvN7nBEGznEgTN9T/eNRSNZZo80bD9s0ua/mtUUcy23rJAMxWLIh5yIXv/2I/SHR/cBcjCVysO0CMdolPlAxWiUapH0jhhEMQ/BisD9mJaUuL0QK/5sg8tLgAeS1qdQJVyc5WvS0SszIPndo4X084IHgNeEvneCY4lqlLt/gcuXjnNZhPNpQ6WN+0Q32h3WuvACgN610jAQuB+la6ectWuAf4sN4qnjgoOQ+9+Bc9e/J4sE+vj4Bmu1b4njiQTzhWF4A
+#解密得到原始的root token
+➜  ~ echo "wcBMA1qBDjHh2tL6AQgAI+Tx2bXsLAXEnx/q5p/OfZMZcfS0sPhAo4abQxCH4BWcVpTXYIG91KOxqVD4SfsrC9qDM+22+Hsw8qPCFyaTNB6RpisJyZO+tr1/hXbp3Jphwpu02llGNmE03LS5P4VveSLg/qJNbKXT0bFlub57mNFFPgND1I/4YV/7v+plOFSpY6ENr+AvO24gbggOWux/eG1+4CF9OBYbV7ua1zgTzqk6LOlfPEkhnvN7nBEGznEgTN9T/eNRSNZZo80bD9s0ua/mtUUcy23rJAMxWLIh5yIXv/2I/SHR/cBcjCVysO0CMdolPlAxWiUapH0jhhEMQ/BisD9mJaUuL0QK/5sg8tLgAeS1qdQJVyc5WvS0SszIPndo4X084IHgNeEvneCY4lqlLt/gcuXjnNZhPNpQ6WN+0Q32h3WuvACgN610jAQuB+la6ectWuAf4sN4qnjgoOQ+9+Bc9e/J4sE+vj4Bmu1b4njiQTzhWF4A" | base64 -D | gpg -dq
+a177f2cf-e227-3025-8439-35d26de2f06f
+#使用新root token进行操作
+➜  ~ export VAULT_TOKEN=a177f2cf-e227-3025-8439-35d26de2f06f
+➜  ~ vault read secret/hello
+Key             	Value
+---             	-----
+refresh_interval	768h0m0s
+vaule           	world
+```
+
 ## 认证并存取机密
 
 存取机密前必须需要经过认证，首先使用root token进行测试
@@ -442,3 +539,4 @@ Code: 400. Errors:
 [^2]: https://sreeninet.wordpress.com/2016/10/01/vault-use-cases/
 [^3]: https://www.hashicorp.com/blog/cubbyhole-authentication-principles/
 [^4]: https://www.hashicorp.com/blog/vault-0-6/
+[^5]: https://www.vaultproject.io/docs/concepts/pgp-gpg-keybase.html
