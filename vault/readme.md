@@ -78,7 +78,7 @@ your vault will remain permanently sealed.
 
 务必将5个解封密钥(实践中将由5人分别持有)和root token记录下来。
 
-使用vault unseal命令执行解封(不要将解密key直接写在unseal命令之后)
+使用`vault unseal`命令执行解封(不要将解密key直接写在unseal命令之后)
 
 ```shell
 ➜  ~ vault unseal
@@ -247,6 +247,75 @@ Code: 503. Errors:
 
 * Vault is sealed
 ```
+
+发生紧急状况时，应该要立刻将vault密钥将机密锁死以防机密数据的进一步泄露以争取时间调查原因并采取相关措施。相关状况对应处置如下[^6]：
+
++ 存储在vault中的一个机密数据泄露了：立即生成一个新机密并替换它，并且使用`vault rotate`命令切换一个vault存储用的加密密钥(该操作是透明的，vault将保持在线并提供服务，使用`vault key-status`命令可以看到加密密钥的变更)
++ vault用户凭证(如token)泄露了：立即将泄露的凭证吊销，并且使用`vault rotate`命令切换一个vault存储用的加密密钥
++ vault解封密钥泄露了：使用`vault rekey`命令重新生成新的解封密钥
+
+ps：`vault rekey`命令还可以变更解封密钥的总份数和解封需要的份数，适用于增减vault管理员的情况
+
+```shell
+#查看rekey状态
+➜  ~ vault rekey -status
+Nonce:
+Started: false
+Key Shares: 0
+Key Threshold: 0
+Rekey Progress: 0
+Required Keys: 2
+#开始rekey
+➜  ~ vault rekey -init -key-shares=3 -key-threshold=2 -pgp-keys="vivia.asc,vivia.asc,vivia.asc" -backup=true
+Nonce: 1064b780-e948-b1c1-0cf2-0c712057957e
+Started: true
+Key Shares: 3
+Key Threshold: 2
+Rekey Progress: 0
+Required Keys: 2
+PGP Key Fingerprints: [2aaaef4f5ce9d93154c8233bb7be4c54223f9907 2aaaef4f5ce9d93154c8233bb7be4c54223f9907 2aaaef4f5ce9d93154c8233bb7be4c54223f9907]
+Backup Storage: true
+#解封密钥持有人1确认rekey操作
+➜  ~ vault rekey
+Rekey operation nonce: 1064b780-e948-b1c1-0cf2-0c712057957e
+Key (will be hidden):
+Nonce: 1064b780-e948-b1c1-0cf2-0c712057957e
+Started: true
+Key Shares: 3
+Key Threshold: 2
+Rekey Progress: 1
+Required Keys: 2
+PGP Key Fingerprints: [2aaaef4f5ce9d93154c8233bb7be4c54223f9907 2aaaef4f5ce9d93154c8233bb7be4c54223f9907 2aaaef4f5ce9d93154c8233bb7be4c54223f9907]
+Backup Storage: true
+#解封密钥持有人2确认rekey操作，并得到最终结果
+➜  ~ vault rekey
+Rekey operation nonce: 1064b780-e948-b1c1-0cf2-0c712057957e
+Key (will be hidden):
+
+
+Key 1 fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907; value: wcBMA1qBDjHh2tL6AQgAsMIlKIMjFPHQvbOyXfbeSztoLxWF8kq7EmFtRi2AV86ZPPzK6cvcv0edckchD1EPjvC+SjZEmHD2u93k0lytm8cQhiEo8qQQgzkPMDGN1YOPZP3g5JdydjdnCM9YVpO0elBHJ3OzLotYNawLSNK93OiuVSYXsLsQvit33z5Rban1ZtxOpdmtkVYVxGnoEs9gpp6A8acW/tOeSOV9W6nqUAZy4enbYtarmZ2JAcLjXisSkBAbA1YN9NGa/R5cRgqGD0YbFusThkDN4y8tz6SntVJzmYjMrH9khYo3buWASvUv8GlYz4e/3qAVvq79/j07HEvGHcbABnJ8PN01A4N6pdLgAeTVPRe8fPQynBfzXQccBXat4VOp4OPgtOGYF+Bi4txz5U/g3OZO29Xr/2jLUb/eYEHv2DMsGCN9Z1dCD+AD+EbqOaPhpcYT+aZsgQnYumaiaq3K1ZiFv57k3bqVHt4rlEHzoJM74NDh6DDgKOQBwpWJ+r7NJSnDt6os7jNl4vv3KMPhP9AA
+Key 2 fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907; value: wcBMA1qBDjHh2tL6AQgAapw1oJqK6DXRj68ccumEcPzK1e6hg+hfUpZu4j2QSw5VBz17SzADHR2yOnN1cRfrOMLgIlJ55UsvLOevvnk31OH4fq6W8j71QMlAKgKbLQTC0wnviE7YJPfv1vRb3xgnHwV1x7Te4/KBOHY2weLNkCXjnceWhSTSTfQm4849AETmMMfwnibQL6Id7JlH9myODp4PhQulEsxFe2AGZsGfA2gzV8i3xGPOmBOHcm7pZJSeWCWiRusS5QDY2nJL/kDdHDj/A3xZLviprfTI7F4D6sNYl2EG70qQk9xqr3Zp5xa+vIxtkWJblIYhXbY+5I9HnVIZj1diu6fVadIzoxOyC9LgAeTe7H1P2d4sSde3H7x5LeRr4WYF4H3go+G9HOBp4kUlgRXgkOZT09Ia+kkB7PviN/5TPvgXOSqW2AilVdj76Ap/xGeNYJuJ1T3FcVYSL5fBsaOJ9ATWV6xRzcYmrnK8kpZ060Zd4PfhOkTgJOTP1Rca2JD0u8381owbrReN4kuFt2nhbtYA
+Key 3 fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907; value: wcBMA1qBDjHh2tL6AQgAvnycpk/SRGpLm4jxdJCQbOFry9uPGGrDime+AqfUQXkxAMhuCfpsEpTpyTue0BS4z10EMi9OF1t5nA0KwNzSR0MEg8XM+HiJwoqMzmxOsy/1scM0PH2oPv5gfP1lheDlG+/jXRuE6XIZKNBtjAP0FXMc/QhdYewOcpRh/wHt28zfLPVdkBR5yGlFTHxB7uJZ9+2kNdu2mhhaSTSwPLH417IlmgylVzMTkx5rKrCC/BOGdAf8Qh5eSyNUvGczdTNdBgHjXKi2BMf34ZfIE54UFho+3omfUqPqfQfDrc/T26T102h7tSPmx5jXBFg2KvfEDStmOhXtphC1FFK0jIVzcNLgAeSOTvMi0a+pCiTcDFjlvycq4fXR4DDg8OHax+AU4uiZlj/gZebsM++oItv94mt/zJ/eCcN5wyBz2OlqY6nVzKLAFNMS5PSpWjBaMMIoQjuKOm2ruBnP8RLsrS6+FG7j4DUpl+7C4IzhFxTgVOQo2aTVAB7owib/6pvT1ZXF4h2MOoHhpF4A
+
+Operation nonce: 1064b780-e948-b1c1-0cf2-0c712057957e
+
+The encrypted unseal keys have been backed up to "core/unseal-keys-backup"
+in your physical backend. It is your responsibility to remove these if and
+when desired.
+
+Vault rekeyed with 3 keys and a key threshold of 2. Please
+securely distribute the above keys. When the vault is re-sealed,
+restarted, or stopped, you must provide at least 2 of these keys
+to unseal it again.
+
+Vault does not store the master key. Without at least 2 keys,
+your vault will remain permanently sealed.
+#保存好后删除备份的解封密钥
+➜  ~ vault rekey -delete
+Stored keys deleted.
+```
+
+
 
 ## 通过Http API访问
 
@@ -540,3 +609,4 @@ Code: 400. Errors:
 [^3]: https://www.hashicorp.com/blog/cubbyhole-authentication-principles/
 [^4]: https://www.hashicorp.com/blog/vault-0-6/
 [^5]: https://www.vaultproject.io/docs/concepts/pgp-gpg-keybase.html
+[^6]: http://chairnerd.seatgeek.com/practical-vault-usage/
