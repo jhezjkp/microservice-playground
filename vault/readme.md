@@ -14,7 +14,9 @@ vault设计原则[^1]:
 + 访问侦测：所有访问和响应数据都有审计日志
 + 安全模式：vault提供一种安全模式，当检测到入侵时，可以将数据密封，以阻止数据泄露
 
-## 配置
+## 部署与初始化
+
+### 配置
 
 vault.conf
 
@@ -29,7 +31,7 @@ listener "tcp" {
 }
 ```
 
-## 启动并初始化
+### 启动并初始化
 
 启动value server
 
@@ -196,7 +198,9 @@ refresh_interval	768h0m0s
 vaule           	world
 ```
 
-## 认证并存取机密
+## 基本操作
+
+### 认证并存取机密
 
 存取机密前必须需要经过认证，首先使用root token进行测试
 
@@ -236,7 +240,7 @@ Success! Deleted 'secret/password' if it existed.
 
 注意，使用命令行认证成功后登录数据将会存储在`$HOME/.vault-token`中，后续命令将直接使用该文件中的内容进行认证，如果文件不存在了则需要重新认证。
 
-## 密封
+### 密封
 
 执行密封命令后，vault将停止服务，直至解封
 
@@ -321,7 +325,7 @@ Stored keys deleted.
 
 
 
-## 通过Http API访问
+### 通过Http API访问
 
 除了cli外，还可以通过http api接口访问vault：
 
@@ -370,7 +374,7 @@ file/  file               replicated            file_path=log/audit.log
 
 从响应的结果中可以看到831fdf18-4f67-3b7c-8937-638a29f137e9这个token的哈希值为3c5e878019363f51f7d322738206e1996373bd69b5460c0db6cd46abe0b111ab，与之前的审计日志匹配。
 
-## 策略(policy)与token管理
+## 策略(policy)管理
 
 vault中的一切都是基于路径的，策略对指定路径进行声明式允许或禁止以达到操作管理的目的。默认的策略是禁止。
 
