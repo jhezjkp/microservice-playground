@@ -152,51 +152,7 @@ Cluster ID: d6f3bf2c-b44d-14c8-f08c-d36ecca921a7
 High-Availability Enabled: false
 ```
 
-另外，在生产环境root token将在完成基础设置后撤销，需要时再行生成一个新的：
-
-```shell
-#撤销root token
-➜  ~ vault token-revoke 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
-Success! Token revoked if it existed.
-➜  ~ vault token-lookup 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
-error looking up token: Error making API request.
-
-URL: POST http://127.0.0.1:8200/v1/auth/token/lookup
-Code: 403. Errors:
-
-* permission denied
-#当需要时，再生成一个root token，需要提供持有root token人的pgp公钥，并需要2个解封密钥授权
-➜  ~ vault generate-root -pgp-key="vivia.asc"
-Root generation operation nonce: 5737a318-c169-d029-76c3-cb98a86868a0
-Key (will be hidden):
-Nonce: 5737a318-c169-d029-76c3-cb98a86868a0
-Started: true
-Generate Root Progress: 1
-Required Keys: 2
-Complete: false
-PGP Fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907
-➜  ~ vault generate-root -pgp-key="vivia.asc"
-Root generation operation nonce: 5737a318-c169-d029-76c3-cb98a86868a0
-Key (will be hidden):
-Nonce: 5737a318-c169-d029-76c3-cb98a86868a0
-Started: true
-Generate Root Progress: 2
-Required Keys: 2
-Complete: true
-PGP Fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907
-
-Encoded root token: wcBMA1qBDjHh2tL6AQgAI+Tx2bXsLAXEnx/q5p/OfZMZcfS0sPhAo4abQxCH4BWcVpTXYIG91KOxqVD4SfsrC9qDM+22+Hsw8qPCFyaTNB6RpisJyZO+tr1/hXbp3Jphwpu02llGNmE03LS5P4VveSLg/qJNbKXT0bFlub57mNFFPgND1I/4YV/7v+plOFSpY6ENr+AvO24gbggOWux/eG1+4CF9OBYbV7ua1zgTzqk6LOlfPEkhnvN7nBEGznEgTN9T/eNRSNZZo80bD9s0ua/mtUUcy23rJAMxWLIh5yIXv/2I/SHR/cBcjCVysO0CMdolPlAxWiUapH0jhhEMQ/BisD9mJaUuL0QK/5sg8tLgAeS1qdQJVyc5WvS0SszIPndo4X084IHgNeEvneCY4lqlLt/gcuXjnNZhPNpQ6WN+0Q32h3WuvACgN610jAQuB+la6ectWuAf4sN4qnjgoOQ+9+Bc9e/J4sE+vj4Bmu1b4njiQTzhWF4A
-#解密得到原始的root token
-➜  ~ echo "wcBMA1qBDjHh2tL6AQgAI+Tx2bXsLAXEnx/q5p/OfZMZcfS0sPhAo4abQxCH4BWcVpTXYIG91KOxqVD4SfsrC9qDM+22+Hsw8qPCFyaTNB6RpisJyZO+tr1/hXbp3Jphwpu02llGNmE03LS5P4VveSLg/qJNbKXT0bFlub57mNFFPgND1I/4YV/7v+plOFSpY6ENr+AvO24gbggOWux/eG1+4CF9OBYbV7ua1zgTzqk6LOlfPEkhnvN7nBEGznEgTN9T/eNRSNZZo80bD9s0ua/mtUUcy23rJAMxWLIh5yIXv/2I/SHR/cBcjCVysO0CMdolPlAxWiUapH0jhhEMQ/BisD9mJaUuL0QK/5sg8tLgAeS1qdQJVyc5WvS0SszIPndo4X084IHgNeEvneCY4lqlLt/gcuXjnNZhPNpQ6WN+0Q32h3WuvACgN610jAQuB+la6ectWuAf4sN4qnjgoOQ+9+Bc9e/J4sE+vj4Bmu1b4njiQTzhWF4A" | base64 -D | gpg -dq
-a177f2cf-e227-3025-8439-35d26de2f06f
-#使用新root token进行操作
-➜  ~ export VAULT_TOKEN=a177f2cf-e227-3025-8439-35d26de2f06f
-➜  ~ vault read secret/hello
-Key             	Value
----             	-----
-refresh_interval	768h0m0s
-vaule           	world
-```
+至此，初始化基本完成。
 
 ## 基本操作
 
@@ -321,6 +277,91 @@ your vault will remain permanently sealed.
 #保存好后删除备份的解封密钥
 ➜  ~ vault rekey -delete
 Stored keys deleted.
+```
+
+### root token的撤销与重新生成
+
+在生产环境root token将在完成基础设置后撤销，需要时再行生成一个新的：
+
+```shell
+#撤销root token
+➜  ~ vault token-revoke 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
+Success! Token revoked if it existed.
+➜  ~ vault token-lookup 6cee277d-54bb-a033-fe9c-0f83bd6f4f77
+error looking up token: Error making API request.
+
+URL: POST http://127.0.0.1:8200/v1/auth/token/lookup
+Code: 403. Errors:
+
+* permission denied
+
+```
+
+下面演示用pgp公钥加密输出重新生成root token
+
+```shell
+#当需要时，再生成一个root token，需要提供持有root token人的pgp公钥，并需要2个解封密钥授权
+➜  ~ vault generate-root -pgp-key="vivia.asc"
+Root generation operation nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Key (will be hidden):
+Nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Started: true
+Generate Root Progress: 1
+Required Keys: 2
+Complete: false
+PGP Fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907
+➜  ~ vault generate-root -pgp-key="vivia.asc"
+Root generation operation nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Key (will be hidden):
+Nonce: 5737a318-c169-d029-76c3-cb98a86868a0
+Started: true
+Generate Root Progress: 2
+Required Keys: 2
+Complete: true
+PGP Fingerprint: 2aaaef4f5ce9d93154c8233bb7be4c54223f9907
+
+Encoded root token: wcBMA1qBDjHh2tL6AQgAI+Tx2bXsLAXEnx/q5p/OfZMZcfS0sPhAo4abQxCH4BWcVpTXYIG91KOxqVD4SfsrC9qDM+22+Hsw8qPCFyaTNB6RpisJyZO+tr1/hXbp3Jphwpu02llGNmE03LS5P4VveSLg/qJNbKXT0bFlub57mNFFPgND1I/4YV/7v+plOFSpY6ENr+AvO24gbggOWux/eG1+4CF9OBYbV7ua1zgTzqk6LOlfPEkhnvN7nBEGznEgTN9T/eNRSNZZo80bD9s0ua/mtUUcy23rJAMxWLIh5yIXv/2I/SHR/cBcjCVysO0CMdolPlAxWiUapH0jhhEMQ/BisD9mJaUuL0QK/5sg8tLgAeS1qdQJVyc5WvS0SszIPndo4X084IHgNeEvneCY4lqlLt/gcuXjnNZhPNpQ6WN+0Q32h3WuvACgN610jAQuB+la6ectWuAf4sN4qnjgoOQ+9+Bc9e/J4sE+vj4Bmu1b4njiQTzhWF4A
+#解密得到原始的root token
+➜  ~ echo "wcBMA1qBDjHh2tL6AQgAI+Tx2bXsLAXEnx/q5p/OfZMZcfS0sPhAo4abQxCH4BWcVpTXYIG91KOxqVD4SfsrC9qDM+22+Hsw8qPCFyaTNB6RpisJyZO+tr1/hXbp3Jphwpu02llGNmE03LS5P4VveSLg/qJNbKXT0bFlub57mNFFPgND1I/4YV/7v+plOFSpY6ENr+AvO24gbggOWux/eG1+4CF9OBYbV7ua1zgTzqk6LOlfPEkhnvN7nBEGznEgTN9T/eNRSNZZo80bD9s0ua/mtUUcy23rJAMxWLIh5yIXv/2I/SHR/cBcjCVysO0CMdolPlAxWiUapH0jhhEMQ/BisD9mJaUuL0QK/5sg8tLgAeS1qdQJVyc5WvS0SszIPndo4X084IHgNeEvneCY4lqlLt/gcuXjnNZhPNpQ6WN+0Q32h3WuvACgN610jAQuB+la6ectWuAf4sN4qnjgoOQ+9+Bc9e/J4sE+vj4Bmu1b4njiQTzhWF4A" | base64 -D | gpg -dq
+a177f2cf-e227-3025-8439-35d26de2f06f
+#使用新root token进行操作
+➜  ~ export VAULT_TOKEN=a177f2cf-e227-3025-8439-35d26de2f06f
+➜  ~ vault read secret/hello
+Key             	Value
+---             	-----
+refresh_interval	768h0m0s
+vaule           	world
+```
+
+再演示一下使用otp加密输入重新生成root token
+
+```shell
+#首先生成一次性密码
+➜  vault git:(master) ✗ vault generate-root -genotp
+OTP: kdOw+Buuar+FcnuJmKR/ug==
+#解封密钥持有人1开始执行生成操作，使用上一步骤生成的一次性密码进行加密
+➜  vault git:(master) ✗ vault generate-root -otp=kdOw+Buuar+FcnuJmKR/ug==
+Root generation operation nonce: 38e49497-f47d-08af-4582-340c98710a31
+Key (will be hidden):
+Nonce: 38e49497-f47d-08af-4582-340c98710a31
+Started: true
+Generate Root Progress: 1
+Required Keys: 2
+Complete: false
+#解封密钥持有人2开始执行生成操作，使用上一步骤生成的一次性密码进行加密
+➜  vault git:(master) ✗ vault generate-root -otp=kdOw+Buuar+FcnuJmKR/ug==
+Root generation operation nonce: 38e49497-f47d-08af-4582-340c98710a31
+Key (will be hidden):
+Nonce: 38e49497-f47d-08af-4582-340c98710a31
+Started: true
+Generate Root Progress: 2
+Required Keys: 2
+Complete: true
+
+Encoded root token: pwSw7Mb+h8T+Tl69WgPiKA==
+#解密生成的root token值
+➜  vault git:(master) ✗ vault generate-root -otp=kdOw+Buuar+FcnuJmKR/ug== -decode=pwSw7Mb+h8T+Tl69WgPiKA==
+Root token: 36d70014-dd50-ed7b-7b3c-2534c2a79d92
 ```
 
 
@@ -572,6 +613,51 @@ token创建后就无法变更其对应的策略，如果需要修改，可以通
 
 - 撤销当前的token，重新生成一个附加了新策略的token
 - 修改当前token对应的策略
+
+### token管理最佳实践
+
+零散的token管理起来不方便，vault提供了一种以role为分组的管理机制统一定义token的附加策略、时效、次效和前缀等，下面做一个演示
+
+```shell
+#首先创建token role
+➜  vault git:(master) ✗ curl -X "POST" "http://127.0.0.1:8200/v1/auth/token/roles/develop" \
+     -H "X-Vault-Token: 36d70014-dd50-ed7b-7b3c-2534c2a79d92" \
+     -d $'{
+  "policies": ["default", "dev-policy"],
+  "path_suffix": "dev-mgame-",
+  "meta": {"project": "mgame"}
+}'
+#创建隶属于develop的token
+➜  vault git:(master) ✗ vault token-create -role=develop -policy=dev-policy -display-name=xiaoming
+Key            	Value
+---            	-----
+token          	7d4567cb-6224-03a2-f701-7cfa1b69f779
+token_accessor 	f9378bc7-9cb1-f0a2-81bb-32f3a23ac620
+token_duration 	768h0m0s
+token_renewable	true
+token_policies 	[default dev-policy]
+➜  vault git:(master) ✗ vault token-lookup -accessor f9378bc7-9cb1-f0a2-81bb-32f3a23ac620
+Key             	Value
+---             	-----
+accessor        	f9378bc7-9cb1-f0a2-81bb-32f3a23ac620
+creation_time   	1501812405
+creation_ttl    	2764800
+display_name    	token-xiaoming
+expire_time     	2017-09-05T10:06:45.591298546+08:00
+explicit_max_ttl	0
+id
+issue_time      	2017-08-04T10:06:45.591298376+08:00
+meta            	<nil>
+num_uses        	0
+orphan          	false
+path            	auth/token/create/develop/dev-mgame
+policies        	[default dev-policy]
+renewable       	true
+role            	develop
+ttl             	2764776
+```
+
+
 
 ## AppRole认证模块
 
