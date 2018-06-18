@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -32,20 +31,21 @@ func usage() {
 
 func init() {
 	// 获取本机ip
-	var localIp string = ""
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		os.Stderr.WriteString("Error:" + err.Error() + "\n")
-		os.Exit(1)
-	}
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				//fmt.Println(ipnet.IP.To4())
-				localIp = ipnet.IP.To4().String()
-			}
-		}
-	}
+	var localIp string = "localhost"
+	/*addrs, err := net.InterfaceAddrs()*/
+	//if err != nil {
+	//os.Stderr.WriteString("Error:" + err.Error() + "\n")
+	//os.Exit(1)
+	//}
+	//for _, a := range addrs {
+	//if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+	//if ipnet.IP.To4() != nil {
+	//fmt.Println(ipnet.Network())
+	//fmt.Println(ipnet.IP.To4())
+	//localIp = ipnet.IP.To4().String()
+	//}
+	//}
+	/*}*/
 
 	flag.BoolVar(&showHelp, "help", false, "show usage")
 	flag.BoolVar(&showVersion, "version", false, "show version")
@@ -55,14 +55,17 @@ func init() {
 	flag.Usage = usage
 	flag.Parse()
 
-	logger.Debug().Str("ip", localIp).Msg("本机IP")
-
 	// 设置日志级别
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if dev {
-		fmt.Println("setting debug level")
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		logger.Logger = logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	} else {
+		f, _ := os.OpenFile("run.log", os.O_RDWR|os.O_APPEND, 0755)
+		logger.Logger = logger.Output(zerolog.ConsoleWriter{Out: f, NoColor: true})
 	}
+
+	logger.Debug().Str("ip", localIp).Msg("本机IP")
 
 	// 加入consul集群
 	config := consulapi.DefaultConfig()
@@ -75,15 +78,10 @@ func init() {
 	//fmt.Println(err)
 	/*}*/
 	members, _ := agent.Members(false)
-	fmt.Println("Members:" + string(len(members)))
-	fmt.Println(len(members))
+	logger.Debug().Int("members", len(members)).Msg("集群")
 	for _, m := range members {
-		fmt.Println(*m)
+		logger.Debug().Str("name", m.Name).Str("address", m.Addr).Uint16("port", m.Port).Msg("member")
 	}
-
-	// 节点名
-	nodeName, _ := agent.NodeName()
-	fmt.Println("NodeName:" + nodeName)
 
 	// other
 	//go monitorEvent(client.KV(), client.Event())
@@ -129,7 +127,6 @@ func monitorEvent(kv *consulapi.KV, event *consulapi.Event) {
 }
 
 func main() {
-
 	if showHelp || flag.NArg() == 0 {
 		usage()
 		os.Exit(0)
