@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	consulapi "github.com/hashicorp/consul/api"
@@ -21,8 +20,15 @@ var VERSION string = "alpha"
 // 参数项
 var showHelp, showVersion, dev bool
 
+// 本机ip
+var localIp string = "localhost"
+
 // consul服务器接入地址
 var consulServerAddr string
+
+// consul引用
+var client *consulapi.Client
+var agent *consulapi.Agent
 
 func usage() {
 	fmt.Println("Usage gos [-version] [-help] <command> [<args>]")
@@ -31,7 +37,6 @@ func usage() {
 
 func init() {
 	// 获取本机ip
-	var localIp string = "localhost"
 	/*addrs, err := net.InterfaceAddrs()*/
 	//if err != nil {
 	//os.Stderr.WriteString("Error:" + err.Error() + "\n")
@@ -70,8 +75,8 @@ func init() {
 	// 加入consul集群
 	config := consulapi.DefaultConfig()
 	config.Address = consulServerAddr
-	client, _ := consulapi.NewClient(config)
-	agent := client.Agent()
+	client, _ = consulapi.NewClient(config)
+	agent = client.Agent()
 	//err = agent.Join("192.168.33.101", false)
 	/*agent.Join(localIp, false)*/
 	//if err != nil {
@@ -88,15 +93,31 @@ func init() {
 }
 
 func deploy() {
+	kv := client.KV()
+	lastLTime := uint64(0)
+	deployKey := localIp + "/index"
+	pair, _, err := kv.Get(deployKey, nil)
+	needUpdateIndex := false
+	if err == nil && pair != nil {
+		lastLTime, _ = strconv.ParseUint(string(pair.Value), 10, 64)
+	}
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter text: ")
 	text, _ := reader.ReadString('\n')
-	fmt.Println(strings.Trim(text, "\n"))
+	logger.Debug().Msg("input " + text)
 	ues := []consulapi.UserEvent{}
 	json.Unmarshal([]byte(text), &ues)
-	fmt.Println(len(ues))
-	fmt.Println(ues[0].ID)
-	fmt.Println(ues[0])
+	for _, ue := range ues {
+		if ue.LTime > lastLTime {
+			data, _ := json.Marshal(ue)
+			logger.Info().Str("lastLTime", strconv.FormatUint(lastLTime, 10)).Msg("事件" + string(data))
+			lastLTime = ue.LTime
+			needUpdateIndex = true
+		}
+	}
+	if needUpdateIndex {
+		kv.Put(&consulapi.KVPair{Key: deployKey, Value: []byte(strconv.FormatUint(lastLTime, 10))}, nil)
+		logger.Debug().Str("index", strconv.FormatUint(lastLTime, 10)).Msg("更新事件LTime")
+	}
 }
 
 func monitorEvent(kv *consulapi.KV, event *consulapi.Event) {
@@ -141,7 +162,6 @@ func main() {
 		fmt.Println("prepare to start")
 		break
 	case "deploy":
-		fmt.Println("prepare to deploy")
 		deploy()
 		break
 	default:
