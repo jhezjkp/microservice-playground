@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"time"
 
@@ -92,6 +94,7 @@ func init() {
 	//go monitorEvent(client.KV(), client.Event())
 }
 
+// 部署游戏服
 func deploy() {
 	kv := client.KV()
 	lastLTime := uint64(0)
@@ -117,6 +120,45 @@ func deploy() {
 	if needUpdateIndex {
 		kv.Put(&consulapi.KVPair{Key: deployKey, Value: []byte(strconv.FormatUint(lastLTime, 10))}, nil)
 		logger.Debug().Str("index", strconv.FormatUint(lastLTime, 10)).Msg("更新事件LTime")
+	}
+}
+
+// 启动游戏服
+func startGame() {
+	cmd := exec.Command("java", "-jar", "game.jar")
+	cmd.Dir = "/Users/vivia/github/microservice-playground/fake-game/game"
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	} else {
+		kv := client.KV()
+		deployKey := "games/game"
+		pid := cmd.Process.Pid
+		kv.Put(&consulapi.KVPair{Key: deployKey, Value: []byte(strconv.Itoa(pid))}, nil)
+		logger.Debug().Int("pid", pid).Msg("更新进程编号")
+	}
+}
+
+// 停止游戏服
+func stopGame() {
+	deployKey := "games/game"
+	kv := client.KV()
+	pair, _, err := kv.Get(deployKey, nil)
+	pid := -1
+	if err == nil && pair != nil {
+		pid, _ = strconv.Atoi(string(pair.Value))
+	}
+	if pid <= 0 {
+		return
+	}
+	cmd := exec.Command("kill", "-15", strconv.Itoa(pid))
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	} else {
+		kv := client.KV()
+		deployKey := "games/game"
+		pid := -1
+		kv.Put(&consulapi.KVPair{Key: deployKey, Value: []byte(strconv.Itoa(pid))}, nil)
+		logger.Debug().Int("pid", pid).Msg("更新进程编号")
 	}
 }
 
@@ -159,7 +201,10 @@ func main() {
 	var cmd string = flag.Arg(0)
 	switch cmd {
 	case "start":
-		fmt.Println("prepare to start")
+		startGame()
+		break
+	case "stop":
+		stopGame()
 		break
 	case "deploy":
 		deploy()
