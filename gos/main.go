@@ -190,11 +190,11 @@ func monitorEvent(kv *consulapi.KV, event *consulapi.Event) {
 }
 
 func main() {
-	if showHelp || flag.NArg() == 0 {
-		usage()
-		os.Exit(0)
-	} else if showVersion {
+	if showVersion {
 		fmt.Println("version: " + VERSION)
+		os.Exit(0)
+	} else if showHelp || flag.NArg() == 0 {
+		usage()
 		os.Exit(0)
 	}
 

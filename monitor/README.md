@@ -1,13 +1,13 @@
 # docker 监控方案实战
 
-influxdb:1.0.0-beta2-alpine
+influxdb:1.8.10
 
 ## 部署时序数据库influxdb
 
 生成配置influxdb配置文件(可选)
 
 ```shell
-docker run --rm influxdb:0.13-alpine influxd config > influxdb.conf
+docker run --rm influxdb:1.8.10 influxd config > influxdb.conf
 ```
 
 启动influxdb
@@ -16,7 +16,7 @@ docker run --rm influxdb:0.13-alpine influxd config > influxdb.conf
 docker run -d --name influxdb -p 8083:8083 -p 8086:8086 \
       -v $PWD/influxdb:/var/lib/influxdb \
       -e TZ=Asia/Shanghai \
-      influxdb:0.13 -config \
+      influxdb:1.8.10 -config \
       /etc/influxdb/influxdb.conf
 ```
 
@@ -25,18 +25,25 @@ tips：
 + 如果需要自定义配置则加上"-v $PWD/influxdb.conf:/etc/influxdb/influxdb.conf:ro"
 + 上述命令行中的-e TZ=Asia/Shanghai是设定时区，仅在base image为debain/ubuntu/centos时有效，alpine不支持
 
-访问http://localhost:8083使用query templates创建数据库monitor
+## 创建用户和数据库
 
-```sql
-CREATE DATABASE "monitor"
-```
-
-测试写数据：
+启动docker实例后，开启一个新终端，创建用户和数据库
 
 ```shell
-curl -X "POST" "http://localhost:8086/write?db=monitor" \
-	-H "Content-Type: text/plain; charset=utf-8" \
-	-d "test,usage=99 host=\"venus\""
+# 启动客户端
+influxdb
+# 创建用户
+CREATE USER monitor WITH PASSWORD 'monitor@2022' WITH ALL PRIVILEGES
+# 创建数据库
+create database "monitor";
+```
+
+以上步骤完成后，再修改influxdb.conf，将http分区下的"auth-enabled"的值改为true，开启认证，然后重启实例。
+
+测试http接口：
+
+```sql
+curl "http://192.168.50.88:8086/query?u=monitor&p=monitor%402022&q=show%20databases"
 ```
 
 ## 部署cAdvisor
@@ -91,3 +98,5 @@ docker run -d --name oneapm-ci-agent \
   -e LICENSE_KEY=YOUR_CLOUD_INSIGHT_LICENSE_KEY \
   oneapm/docker-oneapm-ci-agent:latest
 ```
+
+grafana dashboard导入：https://grafana.com/grafana/dashboards/

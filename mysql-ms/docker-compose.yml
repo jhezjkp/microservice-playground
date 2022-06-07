@@ -5,7 +5,7 @@ services:
         container_name: master
         hostname: master
         environment:
-            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_ROOT_PASSWORD=2007jkp
             - MYSQL_ALLOW_EMPTY_PASSWORD=no
         volumes:
             - ./data/master:/var/lib/mysql
@@ -18,7 +18,7 @@ services:
         container_name: slave
         hostname: slave
         environment:
-            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_ROOT_PASSWORD=2007jkp
             - MYSQL_ALLOW_EMPTY_PASSWORD=no
         volumes:
             - ./data/slave:/var/lib/mysql
